@@ -3,6 +3,7 @@ DataStructure Area
 """
 
 from pathlib import Path
+from typing import TypedDict
 
 _PROJECT_ROOT = (
     Path(__file__)  # 当前文件路径对象，屏蔽OS差异
@@ -10,7 +11,15 @@ _PROJECT_ROOT = (
     .parents[3]  # 0=../ 1=../../
 )
 
-PATH = {
+
+class _PathMap(TypedDict):
+    config: Path
+    logs: Path
+    util: Path
+    fail: Path
+
+
+PATH: _PathMap = {
     # Path 对象重写（Overwrite）了 / 运算符，变成了路径连接符
     "config": _PROJECT_ROOT / "config",  # config/ 目录的绝对路径
     "logs": _PROJECT_ROOT / "logs",  # logs/
@@ -20,23 +29,50 @@ PATH = {
 
 import multiprocessing
 
-ENV = {
+
+class _EnvMap(TypedDict):
+    cpu: int
+
+
+ENV: _EnvMap = {
     "cpu": multiprocessing.cpu_count(),
 }
 
 import logging
 
-LOG = {
+
+class _LogMap(TypedDict):
+    level: int
+    to_console: bool
+
+
+LOG: _LogMap = {
     "level": logging.ERROR,
     "to_console": True,
 }
 
-IO = {
+
+class _IoMap(TypedDict):
+    buffer_size: int
+    batch_size: int
+
+
+IO: _IoMap = {
     "buffer_size": 1024 * 4,  # 4KB
-    "async": False,
+    "batch_size": 100,
 }
 
-LLM = {
+
+class _LlmMap(TypedDict):
+    enable: bool
+    key: str
+    base_url: str
+    model: str
+    sys_prompt: str
+    temperature: float
+
+
+LLM: _LlmMap = {
     "enable": False,
     "key": "",  # store secretly
     "base_url": "https://api.siliconflow.cn/v1",
@@ -64,7 +100,12 @@ _PATTERNS = {
 START_REGEX = re.compile("|".join(_PATTERNS["start_patterns"]))
 END_REGEX = re.compile("|".join(_PATTERNS["ending_patterns"]))
 
-ANALYZE = {
+
+class _AnalyzeMap(TypedDict):
+    max_pages_to_try: int
+
+
+ANALYZE: _AnalyzeMap = {
     "max_pages_to_try": 30,
 }
 
@@ -96,3 +137,5 @@ def merge_shards(target_file: Path):
 """
 Script Area
 """
+
+print(f"项目根目录为{_PROJECT_ROOT}")
