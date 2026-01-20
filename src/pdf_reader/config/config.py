@@ -24,10 +24,10 @@ PATH: _PathMap = {
     "config": _PROJECT_ROOT / "config",  # config/ 目录的绝对路径
     "logs": _PROJECT_ROOT / "logs",  # logs/
     "util": _PROJECT_ROOT / "util",  # util/
-    "fail": _PROJECT_ROOT / "fail",  # fail/
+    "fail": _PROJECT_ROOT / "logs" / "fail",  # fail/
 }
 
-import multiprocessing
+import multiprocessing as mp
 
 
 class _EnvMap(TypedDict):
@@ -35,20 +35,20 @@ class _EnvMap(TypedDict):
 
 
 ENV: _EnvMap = {
-    "cpu": multiprocessing.cpu_count(),
+    "cpu": mp.cpu_count(),
 }
 
 import logging
 
 
 class _LogMap(TypedDict):
-    level: int
+    level: logging._Level
     to_console: bool
 
 
 LOG: _LogMap = {
-    "level": logging.ERROR,
-    "to_console": True,
+    "level": logging.DEBUG,
+    "to_console": False,
 }
 
 
@@ -101,41 +101,6 @@ START_REGEX = re.compile("|".join(_PATTERNS["start_patterns"]))
 END_REGEX = re.compile("|".join(_PATTERNS["ending_patterns"]))
 
 
-class _AnalyzeMap(TypedDict):
-    max_pages_to_try: int
-
-
-ANALYZE: _AnalyzeMap = {
-    "max_pages_to_try": 30,
-}
-
-
 """
 Function Definition Area
 """
-
-
-import shutil
-
-
-def merge_shards(target_file: Path):
-    """将所有碎片文件合并为目标文件，并删除碎片"""
-    directory = target_file.parent
-    pattern = f"{target_file.name}.*"
-
-    # 打开最终目标文件
-    with target_file.open("wb") as outfile:
-        # 找到所有碎片文件
-        for shard in directory.glob(pattern):
-            with shard.open("rb") as infile:
-                # 使用 shutil.copyfileobj 利用内核级拷贝 (sendfile)，速度极快
-                shutil.copyfileobj(infile, outfile)
-            # 合并完删除碎片
-            shard.unlink()
-
-
-"""
-Script Area
-"""
-
-print(f"项目根目录为{_PROJECT_ROOT}")
