@@ -3,7 +3,7 @@ DataStructure Area
 """
 
 from pathlib import Path
-from typing import Tuple, TypedDict, Any
+from typing import TypedDict
 
 _PROJECT_ROOT = (
     Path(__file__)  # 当前文件路径对象，屏蔽OS差异
@@ -48,7 +48,7 @@ class _LogMap(TypedDict):
 
 LOG: _LogMap = {
     "level": logging.DEBUG,
-    "to_console": True,
+    "to_console": False,
 }
 
 
@@ -101,104 +101,6 @@ START_REGEX = re.compile("|".join(_PATTERNS["start_patterns"]))
 END_REGEX = re.compile("|".join(_PATTERNS["ending_patterns"]))
 
 
-class _AnalyzeMap(TypedDict):
-    max_pages_to_try: int
-
-
-ANALYZE: _AnalyzeMap = {
-    "max_pages_to_try": 30,
-}
-
-
-logger_root = logging.getLogger("app")
-logger_cnv_fail = logging.getLogger("app.fail.cnv")
-logger_xtr_fail = logging.getLogger("app.fail.xtr")
-
-
 """
 Function Definition Area
 """
-
-
-import shutil
-
-
-def merge_shards(target_file: Path):
-    """将所有碎片文件合并为目标文件，并删除碎片"""
-    directory = target_file.parent
-    pattern = f"{target_file.name}.*"
-
-    # 打开最终目标文件
-    with target_file.open("wb") as outfile:
-        # 找到所有碎片文件
-        for shard in directory.glob(pattern):
-            with shard.open("rb") as infile:
-                # 使用 shutil.copyfileobj 利用内核级拷贝 (sendfile)，速度极快
-                shutil.copyfileobj(infile, outfile)
-            # 合并完删除碎片
-            shard.unlink()
-
-
-import logging.handlers
-
-
-def _create_file_handler(
-    log_path: Path, level: int, fmt: str, filter_name: str
-) -> logging.Handler:
-    # 确保父目录存在
-    log_path.parent.mkdir(parents=True, exist_ok=True)
-    handler = logging.FileHandler(log_path, encoding="utf-8")
-    handler.setLevel(level)
-    handler.setFormatter(logging.Formatter(fmt))
-    handler.addFilter(logging.Filter(filter_name))
-    return handler
-
-
-def setup_listener(queue: Any) -> logging.handlers.QueueListener:
-    # system handler
-    handler_root = _create_file_handler(
-        PATH["logs"] / "app.log",
-        logging.DEBUG,
-        "%(asctime)s [%(processName)s] %(levelname)s %(name)s: %(message)s",
-        "app",
-    )
-
-    # cnv fail handler
-    handler_cnv_fail = _create_file_handler(
-        PATH["fail"] / "manifest_cnv.txt",
-        logging.WARNING,
-        "%(message)s",
-        "app.fail.cnv",
-    )
-
-    # xtr fail handler
-    handler_xtr_fail = _create_file_handler(
-        PATH["fail"] / "manifest_xtr.txt",
-        logging.WARNING,
-        "%(message)s",
-        "app.fail.xtr",
-    )
-
-    listener = logging.handlers.QueueListener(
-        queue,
-        handler_root,
-        handler_cnv_fail,
-        handler_xtr_fail,
-        respect_handler_level=True,
-    )
-    listener.start()
-    return listener
-
-
-def worker_logger_initializer(queue: Any):
-    """在子进程初始化时调用：将所有日志重定向到 Queue"""
-    root = logging.getLogger()
-    # 清除可能存在的默认 handler，防止重复打印
-    if root.handlers:
-        for handler in root.handlers:
-            root.removeHandler(handler)
-
-    root.setLevel(logging.DEBUG)  # 必须设置 Level，否则默认是 WARNING
-    # 子进程只负责把 Log 扔进 Queue，不负责写文件
-    handler = logging.handlers.QueueHandler(queue)
-    root.addHandler(handler)
