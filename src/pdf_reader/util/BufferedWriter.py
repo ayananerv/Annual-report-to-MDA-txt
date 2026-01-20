@@ -23,7 +23,7 @@ class BufferedWriter:
         # 预先打开文件句柄，避免每次 flush 重复 open/close 的系统调用开销
         # buffering=buffer_size: 让 Python 内置的 IO 也做一层缓冲
         filepath.parent.mkdir(parents=True, exist_ok=True)
-        self._f = self.real_path.open("a", encoding="utf-8", buffering=self.buffer_size)
+        self._f = self.real_path.open("ab", buffering=self.buffer_size)
 
         # 注册退出时的清理函数，防止程序崩溃导致最后一段 buffer 没写入
         atexit.register(self.close)
@@ -45,7 +45,7 @@ class BufferedWriter:
 
         # 使用 join 一次性拼接，比循环 write 快得多
         chunk = "".join(self.buffer)
-        self._f.write(chunk)
+        self._f.write(chunk.encode("utf-8"))
 
         # 清空缓冲区
         self.buffer.clear()
