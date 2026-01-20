@@ -17,6 +17,8 @@ class _PathMap(TypedDict):
     logs: Path
     util: Path
     fail: Path
+    src: Path
+    out: Path
 
 
 PATH: _PathMap = {
@@ -25,6 +27,8 @@ PATH: _PathMap = {
     "logs": _PROJECT_ROOT / "logs",  # logs/
     "util": _PROJECT_ROOT / "util",  # util/
     "fail": _PROJECT_ROOT / "logs" / "fail",  # fail/
+    "src": _PROJECT_ROOT / "assets" / "pdf",
+    "out": _PROJECT_ROOT / "assets" / "out",
 }
 
 import multiprocessing as mp
@@ -59,7 +63,7 @@ class _IoMap(TypedDict):
 
 IO: _IoMap = {
     "buffer_size": 1024 * 4,  # 4KB
-    "batch_size": 100,
+    "batch_size": 10,
 }
 
 
@@ -83,22 +87,25 @@ LLM: _LlmMap = {
 
 import re
 
-_PATTERNS = {
+
+class _PatternMap(TypedDict):
+    start_patterns: list[str]
+    ending_patterns: list[str]
+
+
+PATTERNS: _PatternMap = {
     "start_patterns": [
-        # 严格匹配模式 - 只使用这一个模式以确保提取精度
-        r"^第[一二三四五六七八九十0-9]{1,3}(?:章|节)\s*(?:管理层讨论与分析|经营情况讨论与分析|董事会报告|董事局报告)\s*$",
-        # 新增: 匹配"四、董事会报告"格式 (中文数字或阿拉伯数字+标点+关键词)
-        r"^\s*[一二三四五六七八九十0-9]+[、，：:]\s*(?:管理层讨论与分析|经营情况讨论与分析|董事会报告|董事局报告)\s*$",
+        r"^第([一二三四五六七八九十0-9]{1,3})(?:章|节)\s*(?:管理层讨论与分析|董事会报告|董事会工作报告|董事局报告|经营情况讨论与分析)\s*$",
+        r"^\s*([一二三四五六七八九十0-9]+)[、，：:]\s*(?:管理层讨论与分析|董事会报告|董事会工作报告|董事局报告|经营情况讨论与分析)\s*$",
     ],
     "ending_patterns": [
-        r"^第[四五六七八九十0-9]{1,3}(?:章|节)",
-        r"^\s*(?:第\s*)?(?:[一二三四五六七八九十0-9]+)\s*[章节]?\s*[：:]*\s*(?:重要事项|公司治理|财务报告|企业管治报告|监事会报告)",
+        r"^\s*(?:第\s*)?(?:[一二三四五六七八九十0-9]+)\s*[章节]?\s*[：:]*\s*(?:重要事项|公司治理|财务报告|企业管治报告|监事会报告|回顾)",
         r"^\s*(?:重要事项|公司治理|财务报告|企业管治报告|监事会报告)\s*$",
     ],
 }
 
-START_REGEX = re.compile("|".join(_PATTERNS["start_patterns"]))
-END_REGEX = re.compile("|".join(_PATTERNS["ending_patterns"]))
+START_REGEX = re.compile("|".join(PATTERNS["start_patterns"]))
+END_REGEX = re.compile("|".join(PATTERNS["ending_patterns"]))
 
 
 """
