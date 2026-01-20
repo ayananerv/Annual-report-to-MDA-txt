@@ -1,4 +1,4 @@
-## 补充
+# 补充
 
 由于第一个 README 写得很详细，我不愿打扰它
 
@@ -20,3 +20,19 @@
 - 由于调试阶段，开启了debug及以上的全部日志，开启了控制台流日志
 - 文件日志记录有巨大延迟，控制台日志没有一个成功打印出来了
 - 不知道日志模块是否会变成瓶颈，不知道能否依靠堆内存容量解决
+
+## 复现方法
+
+```sh
+# 首先改远程仓库的名字
+# local
+git remote set-rul origin git@github.com:ayananerv/Annual-report-to-MDA-txt.git
+
+# 然后同步分支
+# local - 使用 vscode 操作
+# 更新 develop 分支并 checkout 到 feature/do-real-work
+
+# 运行
+uv sync
+uv run python -m pdf_reader.main
+```
