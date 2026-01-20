@@ -10,6 +10,7 @@
     "editor.indentSize": "tabSize",
   },
   "cSpell.words": [
+    "deepseek",
     "getpid",
     "infile",
     "pytest",

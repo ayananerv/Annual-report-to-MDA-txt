@@ -3,7 +3,7 @@ DataStructure Area
 """
 
 from pathlib import Path
-from typing import TypedDict
+from typing import Tuple, TypedDict, Any
 
 _PROJECT_ROOT = (
     Path(__file__)  # 当前文件路径对象，屏蔽OS差异
@@ -24,10 +24,10 @@ PATH: _PathMap = {
     "config": _PROJECT_ROOT / "config",  # config/ 目录的绝对路径
     "logs": _PROJECT_ROOT / "logs",  # logs/
     "util": _PROJECT_ROOT / "util",  # util/
-    "fail": _PROJECT_ROOT / "fail",  # fail/
+    "fail": _PROJECT_ROOT / "logs" / "fail",  # fail/
 }
 
-import multiprocessing
+import multiprocessing as mp
 
 
 class _EnvMap(TypedDict):
@@ -35,19 +35,19 @@ class _EnvMap(TypedDict):
 
 
 ENV: _EnvMap = {
-    "cpu": multiprocessing.cpu_count(),
+    "cpu": mp.cpu_count(),
 }
 
 import logging
 
 
 class _LogMap(TypedDict):
-    level: int
+    level: logging._Level
     to_console: bool
 
 
 LOG: _LogMap = {
-    "level": logging.ERROR,
+    "level": logging.DEBUG,
     "to_console": True,
 }
 
@@ -110,6 +110,11 @@ ANALYZE: _AnalyzeMap = {
 }
 
 
+logger_root = logging.getLogger("app")
+logger_cnv_fail = logging.getLogger("app.fail.cnv")
+logger_xtr_fail = logging.getLogger("app.fail.xtr")
+
+
 """
 Function Definition Area
 """
@@ -134,8 +139,66 @@ def merge_shards(target_file: Path):
             shard.unlink()
 
 
-"""
-Script Area
-"""
+import logging.handlers
 
-print(f"项目根目录为{_PROJECT_ROOT}")
+
+def _create_file_handler(
+    log_path: Path, level: int, fmt: str, filter_name: str
+) -> logging.Handler:
+    # 确保父目录存在
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    handler = logging.FileHandler(log_path, encoding="utf-8")
+    handler.setLevel(level)
+    handler.setFormatter(logging.Formatter(fmt))
+    handler.addFilter(logging.Filter(filter_name))
+    return handler
+
+
+def setup_listener(queue: Any) -> logging.handlers.QueueListener:
+    # system handler
+    handler_root = _create_file_handler(
+        PATH["logs"] / "app.log",
+        logging.DEBUG,
+        "%(asctime)s [%(processName)s] %(levelname)s %(name)s: %(message)s",
+        "app",
+    )
+
+    # cnv fail handler
+    handler_cnv_fail = _create_file_handler(
+        PATH["fail"] / "manifest_cnv.txt",
+        logging.WARNING,
+        "%(message)s",
+        "app.fail.cnv",
+    )
+
+    # xtr fail handler
+    handler_xtr_fail = _create_file_handler(
+        PATH["fail"] / "manifest_xtr.txt",
+        logging.WARNING,
+        "%(message)s",
+        "app.fail.xtr",
+    )
+
+    listener = logging.handlers.QueueListener(
+        queue,
+        handler_root,
+        handler_cnv_fail,
+        handler_xtr_fail,
+        respect_handler_level=True,
+    )
+    listener.start()
+    return listener
+
+
+def worker_logger_initializer(queue: Any):
+    """在子进程初始化时调用：将所有日志重定向到 Queue"""
+    root = logging.getLogger()
+    # 清除可能存在的默认 handler，防止重复打印
+    if root.handlers:
+        for handler in root.handlers:
+            root.removeHandler(handler)
+
+    root.setLevel(logging.DEBUG)  # 必须设置 Level，否则默认是 WARNING
+    # 子进程只负责把 Log 扔进 Queue，不负责写文件
+    handler = logging.handlers.QueueHandler(queue)
+    root.addHandler(handler)
