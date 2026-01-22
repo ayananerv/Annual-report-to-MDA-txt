@@ -1,44 +1,49 @@
 import os
 from pathlib import Path
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import List
-import logging
 import multiprocessing as mp
+from typing import Tuple
+from tqdm import tqdm
 
-from .extract_mda import PDF_DIR, OUTPUT_DIR, extract_mda_from_pdf
+from .raw_extract import extract_mda_from_pdf2
 import pdf_reader.config as cg
+from .util.SysException import *
 
 
 # 假设这是你的具体业务逻辑函数
-def do_work(batch_files: List[Path]):
+def do_work(batch_files: List[Path]) -> Tuple[int, int]:
     """
     消费者：处理一个 batch 的文件
     """
-    cg.sys_logger.info(f"开始处理 Batch，包含 {len(batch_files)} 个文件")
+    success_count = 0
+    bs = len(batch_files)
+    cg.sys_logger.info(f"开始处理 Batch，包含 {bs} 个文件")
 
     for file_path in batch_files:
         # 这里执行具体的 PDF 解析或其他 IO/CPU 密集型操作
         # print(f"Processing: {file_path.name}")
-        extract_mda_from_pdf(file_path)
+        result = extract_mda_from_pdf2(file_path)
+        success_count += result
 
     # 根据需求，这里不需要返回值
 
-    return
+    return success_count, bs
 
 
 def main():
+    """
+    TODO 急需重构！！！！
+    """
     # 0. 启动日志模块
-    logging.info("加载日志模块...")
-    m = mp.Manager()
-    log_queue = m.Queue()
+    log_queue = mp.Queue(-1)
     log_listener = cg.setup_listener(log_queue)
-    logging.info("日志模块加载完成")
 
     # 1. 指定读入目录 (Source)
-    input_dir = PDF_DIR
+    input_dir = cg.PATH["src"]
 
     # 2. 指定输出目录 (Destination) - 如果需要的话，可以在 do_work 中使用
-    output_dir = OUTPUT_DIR
+    output_dir = cg.PATH["out"]
 
     # 确保目录存在
     if not input_dir.exists():
@@ -56,8 +61,9 @@ def main():
     # 配置 Batch Size
     BATCH_SIZE = cg.IO["batch_size"]  # 根据实际文件大小和内存情况调整
 
-    # 4. 创建一个进程池 ProcessPoolExecutor
-    # max_workers 如果不填，默认是 CPU 核心数。对于 IO 密集型混合任务，可以适当调大。
+    total_success = 0
+
+
     try:
         with ProcessPoolExecutor(
             max_workers=cg.ENV["cpu"],  # CPU 核心数
@@ -80,11 +86,43 @@ def main():
 
             cg.sys_logger.info(f"已提交 {len(futures)} 个 Batch 任务到进程池...")
 
+            # --- 修改 2: 使用 tqdm 和 as_completed 更新进度 ---
+            # unit="file" 显示单位为文件
+            # ncols=100 设置进度条宽度
+            with tqdm(total=total_files, unit="file", ncols=100, mininterval=1.0) as pbar:
+
+                # as_completed 会在任意一个子进程任务完成时立即 yield
+                for future in as_completed(futures):
+                    try:
+                        # 获取子进程返回值
+                        success, batch_len = future.result()
+
+                        # 更新总成功数
+                        total_success += success
+
+                        # 更新进度条 (前进 batch_len 步)
+                        # set_postfix 可以实时显示额外的统计信息（如当前成功率）
+                        pbar.update(batch_len)
+                        pbar.set_postfix(success=total_success, fail=pbar.n - total_success)
+
+                    except Exception as e:
+                        # 捕获 Unexpected EOF 或其他进程级崩溃
+                        error_msg = str(e)
+                        if "Unexpected EOF" in error_msg:
+                            tqdm.write(f"CRITICAL: 子进程崩溃 (可能由 OOM 或 C底层错误引起)")
+                        else:
+                            tqdm.write(f"Batch Error: {e}")
+                        cg.sys_logger.error(f"\nBatch 执行异常: {e}\n")
+                        # 即使异常，也要更新进度条防止卡住，或者做其他处理
+                        pbar.update(BATCH_SIZE)
+
         # with 语句结束后，会自动等待所有子进程执行完毕 (executor.shutdown(wait=True))
-        cg.sys_logger.info("所有任务执行完毕")
+    except KeyboardInterrupt:
+        executor.shutdown(wait=False, cancel_futures=True)
+    except UnknownException as e:
+        cg.sys_logger.error(f"{e.code}: {e.message}")
     finally:
         log_listener.stop()
-        m.shutdown()
 
 
 if __name__ == "__main__":

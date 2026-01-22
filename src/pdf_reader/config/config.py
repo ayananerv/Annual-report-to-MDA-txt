@@ -3,9 +3,9 @@ DataStructure Area
 """
 
 from pathlib import Path
-from typing import TypedDict
+from typing import TypedDict, Tuple
 
-_PROJECT_ROOT = (
+PROJECT_ROOT = (
     Path(__file__)  # 当前文件路径对象，屏蔽OS差异
     .resolve()  # 当前文件的绝对路径，需要访问磁盘
     .parents[3]  # 0=../ 1=../../
@@ -23,12 +23,12 @@ class _PathMap(TypedDict):
 
 PATH: _PathMap = {
     # Path 对象重写（Overwrite）了 / 运算符，变成了路径连接符
-    "config": _PROJECT_ROOT / "config",  # config/ 目录的绝对路径
-    "logs": _PROJECT_ROOT / "logs",  # logs/
-    "util": _PROJECT_ROOT / "util",  # util/
-    "fail": _PROJECT_ROOT / "logs" / "fail",  # fail/
-    "src": _PROJECT_ROOT / "assets" / "pdf",
-    "out": _PROJECT_ROOT / "assets" / "out",
+    "config": PROJECT_ROOT / "config",  # config/ 目录的绝对路径
+    "logs": PROJECT_ROOT / "logs",  # logs/
+    "util": PROJECT_ROOT / "util",  # util/
+    "fail": PROJECT_ROOT / "logs" / "fail",  # fail/
+    "src": PROJECT_ROOT / "assets" / "pdf",
+    "out": PROJECT_ROOT / "assets" / "out",
 }
 
 import multiprocessing as mp
@@ -39,19 +39,19 @@ class _EnvMap(TypedDict):
 
 
 ENV: _EnvMap = {
-    "cpu": mp.cpu_count(),
+    "cpu": 14,
 }
 
 import logging
 
 
 class _LogMap(TypedDict):
-    level: logging._Level
+    level: int
     to_console: bool
 
 
 LOG: _LogMap = {
-    "level": logging.DEBUG,
+    "level": logging.WARNING,
     "to_console": False,
 }
 
@@ -59,11 +59,13 @@ LOG: _LogMap = {
 class _IoMap(TypedDict):
     buffer_size: int
     batch_size: int
+    search_page_range: Tuple[int, int]
 
 
 IO: _IoMap = {
     "buffer_size": 1024 * 4,  # 4KB
     "batch_size": 10,
+    "search_page_range": (3, 25)  # 0-indexed, so Page 4-25
 }
 
 
@@ -104,8 +106,6 @@ PATTERNS: _PatternMap = {
     ],
 }
 
-START_REGEX = re.compile("|".join(PATTERNS["start_patterns"]))
-END_REGEX = re.compile("|".join(PATTERNS["ending_patterns"]))
 
 
 """

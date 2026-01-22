@@ -3,9 +3,10 @@ name = "pdf-reader"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.13"
 dependencies = [
     "pdfplumber>=0.11.9",
+    "tqdm>=4.67.1",
 ]
 
 
