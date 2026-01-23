@@ -68,9 +68,7 @@ def find_start(pdf: PDF):
                                 ptype = "CHAPTER" if r_idx == 0 else "DIGIT"
                                 return num, ptype, line
                             except Exception as e:
-                                raise UnknownException(
-                                    ErrorCode.UNKNOWN_ERROR, e
-                                ) from e
+                                raise e
                 return None
 
         # Method 1: Raw

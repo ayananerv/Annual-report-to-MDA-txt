@@ -27,8 +27,8 @@ PATH: _PathMap = {
     "logs": PROJECT_ROOT / "logs",  # logs/
     "util": PROJECT_ROOT / "util",  # util/
     "fail": PROJECT_ROOT / "logs" / "fail",  # fail/
-    "src": PROJECT_ROOT / "assets" / "pdf",
-    "out": PROJECT_ROOT / "assets" / "out",
+    "src": PROJECT_ROOT / ".." / "assets" / "pdf",
+    "out": PROJECT_ROOT / ".." / "assets" / "out",
 }
 
 import multiprocessing as mp
@@ -39,7 +39,8 @@ class _EnvMap(TypedDict):
 
 
 ENV: _EnvMap = {
-    "cpu": 14,
+    "cpu": mp.cpu_count(),
+    # "cpu": 1,
 }
 
 import logging
@@ -47,25 +48,25 @@ import logging
 
 class _LogMap(TypedDict):
     level: int
-    to_console: bool
 
 
 LOG: _LogMap = {
     "level": logging.WARNING,
-    "to_console": False,
 }
 
 
 class _IoMap(TypedDict):
     buffer_size: int
     batch_size: int
+    timeout: int
     search_page_range: Tuple[int, int]
 
 
 IO: _IoMap = {
     "buffer_size": 1024 * 4,  # 4KB
     "batch_size": 10,
-    "search_page_range": (3, 25)  # 0-indexed, so Page 4-25
+    "timeout": 20,
+    "search_page_range": (3, 50)  # 0-indexed, so Page 4-25
 }
 
 

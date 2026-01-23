@@ -27,7 +27,7 @@ def _create_handler(
         handler = logging.StreamHandler()
     else:
         path.parent.mkdir(parents=True, exist_ok=True)
-        handler = logging.FileHandler(path, encoding="utf-8", mode="w")
+        handler = logging.FileHandler(path, encoding="utf-8", mode="a")
 
     handler.setLevel(level)
     handler.setFormatter(logging.Formatter(fmt, datefmt="%m-%d %H:%M:%S"))
@@ -55,7 +55,7 @@ def setup_listener(queue: Any) -> logging.handlers.QueueListener:
     sys_logger_handler = _create_handler(
         path=PATH["logs"] / "sys.csv",
         level=logging.WARNING,
-        fmt="%(asctime)s, %(processName)s, %(funcName)s, %(levelname)s, %(name)s, %(message)s",
+        fmt="%(asctime)s, %(process)d, %(funcName)s:%(lineno)d, %(levelname)s, %(name)s, %(message)s",
         filter="sys",
     )
 

@@ -47,3 +47,14 @@ def number_to_chinese(n):
             res += list(CN_NUM.keys())[list(CN_NUM.values()).index(units)]
         return res
     return str(n)
+
+
+from pathlib import Path
+
+def get_file_size_mb(file_path: Path):
+    """
+    获取文件大小，单位：MB
+    """
+    # st_size 返回的是字节(Bytes)
+    # 1 MB = 1024 * 1024 Bytes
+    return file_path.stat().st_size / (1024 * 1024)

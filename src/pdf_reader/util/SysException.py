@@ -3,10 +3,13 @@ from enum import Enum, unique
 class ErrorCode(Enum):
     """ NAME = (CODE, MESSAGE) """
     SUCCESS = (0, "Success")
-    UNREADABLE = (202, "Unreadable, need OCR")
-    NO_CHINESE = (303, "Cannot find valid charactor")
-    NO_START = (440, "Cannot find start index")
-    NO_ENDING = (505, "Cannot find ending index")
+    UNREADABLE = (101, "Unreadable")
+    NO_CHINESE = (202, "Not find valid charactor, need OCR")
+    NO_START = (303, "Not find start index")
+    NO_START_TWICE = (304, "Not find start index in larger range")
+    NO_ENDING = (305, "Not find ending index")
+    BATCH_CORRUPT = (404, "Batch corrupted, may or may not finish")
+    TIMEOUT = (505, "Timeout: Skip current file extraction")
     UNKNOWN_ERROR = (1000, "Unknown error occured")
 
 
@@ -19,17 +22,9 @@ class ErrorCode(Enum):
         return self.value[1]
 
 
-class SysException(RuntimeError):
+class SysException(BaseException):
     def __init__(self, error_enum: ErrorCode):
         self.code = error_enum.code
         self.name = error_enum.name
         self.message = error_enum.msg
         super().__init__(self.message)
-
-
-class UnknownException(RuntimeError):
-    def __init__(self, error_enum: ErrorCode, e: Exception):
-        self.code = error_enum.code
-        self.name = error_enum.name
-        self.message = str(e)
-        super().__init__(e)
