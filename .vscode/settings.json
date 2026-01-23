@@ -5,15 +5,18 @@
     "editor.defaultColorDecorators": "never",
     "editor.formatOnType": true,
     "editor.formatOnSave": true,
+    "editor.formatOnPaste": true,
     "editor.wordBasedSuggestions": "off",
     "editor.tabSize": 4,
     "editor.indentSize": "tabSize",
+    "editor.wordWrapColumn": 120
   },
   "cSpell.words": [
     "addopts",
     "deepseek",
     "getpid",
     "infile",
+    "pdfplumber",
     "pytest",
     "setuptools",
     "testpaths"

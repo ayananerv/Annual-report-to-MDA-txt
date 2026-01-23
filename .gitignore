@@ -12,3 +12,7 @@ wheels/
 temp/
 logs/
 assets/
+*.csv
+
+# vscode
+.vscode/
