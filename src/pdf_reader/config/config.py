@@ -52,11 +52,13 @@ IO = {
 
 LLM = {
     "enable": False,
-    "key": "",  # store secretly
+    "keys": [],  # store secretly
     "base_url": "https://api.siliconflow.cn/v1",
     "model": "Pro/deepseek-ai/DeepSeek-V3",
-    "sys_prompt": "",  # say your prompt
+    "sys_prompt": "",
     "temperature": 0.2,
+    "rpm": 20,
+    "tpm": 2000000,
 }
 
 

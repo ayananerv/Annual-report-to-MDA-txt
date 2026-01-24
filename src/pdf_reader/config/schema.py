@@ -33,12 +33,14 @@ class JobConfig:
     use_increment: bool
 
     # LLM
-    llm_enable: bool
-    llm_key: str
-    llm_base_url: str
-    llm_model: str
-    llm_sys_prompt: str
-    llm_temperature: float
+    enable: bool
+    keys: List[str]
+    base_url: str
+    model: str
+    sys_prompt: str
+    temperature: float
+    rpm: int
+    tpm: int
 
     # PATTERNS
     start_patterns: List[str]
@@ -73,12 +75,14 @@ class JobConfig:
             "search_page_range": cg.IO["search_page_range"],
             "use_increment": cg.IO["use_increment"],
             # LLM
-            "llm_enable": cg.LLM["enable"],
-            "llm_key": cg.LLM["key"],
-            "llm_base_url": cg.LLM["base_url"],
-            "llm_model": cg.LLM["model"],
-            "llm_sys_prompt": cg.LLM["sys_prompt"],
-            "llm_temperature": cg.LLM["temperature"],
+            "enable": cg.LLM["enable"],
+            "keys": cg.LLM["keys"],
+            "base_url": cg.LLM["base_url"],
+            "model": cg.LLM["model"],
+            "sys_prompt": cg.LLM["sys_prompt"],
+            "temperature": cg.LLM["temperature"],
+            "rpm": cg.LLM["rpm"],
+            "tpm": cg.LLM["tpm"],
             # PATTERNS
             "start_patterns": cg.PATTERNS["start_patterns"],
             "ending_patterns": cg.PATTERNS["ending_patterns"],
@@ -95,4 +99,4 @@ class JobConfig:
 
         import json
 
-        print(json.dumps(d, indent=4, ensure_ascii=False, default=str))
+        print(json.dumps(d, indent=2, ensure_ascii=False, default=str))
