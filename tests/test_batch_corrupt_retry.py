@@ -28,7 +28,7 @@ class BatchCorruptRetry(PipelineStage):
 
         input_file = cast(Path, stage_context.result)
         error_map = read_log(input_file)
-        todo_list = error_map.get(ErrorCode.BATCH_CORRUPT.code, [])
+        todo_list = error_map.get(ErrorCode.TIMEOUT.code, [])
 
         # test todo_list
         for p in todo_list:

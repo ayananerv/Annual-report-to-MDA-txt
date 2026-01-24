@@ -160,19 +160,13 @@ def run_processing_module(
 
                 except TimeoutError:
                     for d in batch_data:
-                        sys_logger.warning(
-                            f"{d.resolve()},{ErrorCode.BATCH_CORRUPT.code}"
-                        )
+                        sys_logger.warning(f"{d.resolve()},{ErrorCode.TIMEOUT.code}")
                 except ProcessExpired:
                     for d in batch_data:
-                        sys_logger.warning(
-                            f"{d.resolve()},{ErrorCode.BATCH_CORRUPT.code}"
-                        )
+                        sys_logger.warning(f"{d.resolve()},{ErrorCode.TIMEOUT.code}")
                 except Exception as e:
                     for d in batch_data:
-                        sys_logger.critical(
-                            f"{d.resolve()},{ErrorCode.BATCH_CORRUPT.code}"
-                        )
+                        sys_logger.critical(f"{d.resolve()},{ErrorCode.TIMEOUT.code}")
                     tqdm.write(f"\nOpps! Subprocess corrupt!\nForce exit now!\n")
                 finally:
                     pbar.update(batch_len)
