@@ -1,2 +1,2 @@
-from .config import *
 from .log_config import *
+from .schema import JobConfig

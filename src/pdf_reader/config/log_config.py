@@ -7,17 +7,16 @@ You should update log config manually
 import logging
 import logging.handlers
 from pathlib import Path
-from typing import Any
+from typing import Tuple
+import multiprocessing as mp
 
-from .config import LOG, PATH
+from .schema import JobConfig
 
 """
 You decide to create loggers and update handlers
 in `setup_listener()`
 """
 sys_logger = logging.getLogger("sys")
-cvt_fail_logger = logging.getLogger("sys.fail.cvt")
-xtr_fail_logger = logging.getLogger("sys.fail.xtr")
 
 
 def _create_handler(
@@ -27,7 +26,7 @@ def _create_handler(
         handler = logging.StreamHandler()
     else:
         path.parent.mkdir(parents=True, exist_ok=True)
-        handler = logging.FileHandler(path, encoding="utf-8", mode="a")
+        handler = logging.FileHandler(path, encoding="utf-8", mode="w")
 
     handler.setLevel(level)
     handler.setFormatter(logging.Formatter(fmt, datefmt="%m-%d %H:%M:%S"))
@@ -35,14 +34,13 @@ def _create_handler(
     return handler
 
 
-def setup_root_logger(queue: Any):
+def setup_root_logger(log_queue: mp.Queue):
     root = logging.getLogger()
-    root.setLevel(LOG["level"])
+    root.setLevel(logging.WARNING)
     for h in root.handlers[:]:
         root.removeHandler(h)
         h.close()
-    if queue:
-        root.addHandler(logging.handlers.QueueHandler(queue))
+    root.addHandler(logging.handlers.QueueHandler(log_queue))
 
     # 怀疑是否是第三方库产生了大量的 WARNING，从而堵塞了进程？
     logging.getLogger("pdfminer").setLevel(logging.ERROR)
@@ -51,30 +49,36 @@ def setup_root_logger(queue: Any):
     logging.getLogger("urllib3").setLevel(logging.ERROR)
 
 
-def setup_listener(queue: Any) -> logging.handlers.QueueListener:
+def setup_listener(
+    log_path: Path, log_queue: mp.Queue
+) -> logging.handlers.QueueListener:
+    """
+    You should defer log_listener.stop() manually in finally block
+    """
     sys_logger_handler = _create_handler(
-        path=PATH["logs"] / "sys.csv",
+        path=log_path,
         level=logging.WARNING,
-        fmt="%(asctime)s, %(process)d, %(funcName)s:%(lineno)d, %(levelname)s, %(name)s, %(message)s",
+        fmt="%(asctime)s,%(process)d,%(funcName)s:%(lineno)d,%(levelname)s,%(name)s,%(message)s",
         filter="sys",
     )
 
     tqdm_handler = TqdmLoggingHandler()
-    tqdm_handler.setFormatter(logging.Formatter("%(message)s"))
-
+    tqdm_handler.setFormatter(
+        logging.Formatter("%(process)d>>%(levelname)s: %(message)s")
+    )
 
     handlers = [sys_logger_handler, tqdm_handler]
 
     listener = logging.handlers.QueueListener(
-        queue, *handlers, respect_handler_level=True
+        log_queue, *handlers, respect_handler_level=True
     )
     listener.start()
     return listener
 
 
-
 import logging
 import tqdm
+
 
 class TqdmLoggingHandler(logging.Handler):
     def __init__(self, level=logging.NOTSET):
@@ -89,3 +93,29 @@ class TqdmLoggingHandler(logging.Handler):
             self.flush()
         except Exception:
             self.handleError(record)
+
+
+import pandas as pd
+from typing import List
+
+
+def read_log(log_path: Path) -> dict[int, List[str]]:
+    # 1. 读取日志文件
+    # 假设列之间通过逗号分隔且没有标题行
+    if not log_path.exists():
+        raise FileNotFoundError(log_path)
+    elif log_path.stat().st_size == 0:
+        return {}
+
+    df = pd.read_csv(log_path, header=None)
+
+    # 2. 清洗数据：以倒数第二列（索引 5）为准，保留最后一条记录
+    # subset=5 表示文件名列，keep='last' 确保保留最新记录
+    df_cleaned = df.drop_duplicates(subset=5, keep="last")
+
+    # 3. 按照错误码（最后一列，索引 6）进行分类
+    # 将结果转换为字典，Key 是错误码，Value 是文件名的列表
+    error_map = df_cleaned.groupby(6)[5].apply(list).to_dict()
+
+    # 现在 error_map 就是您需要的字典
+    return error_map
