@@ -8,7 +8,7 @@ from ..config import JobConfig
 
 def process_pdfs(todo_list: List[Path], conf: JobConfig):
     # 定义输入和输出目录
-    output_dir = conf.input_dir
+    output_dir = conf.ocr_output
 
     # 如果输出文件夹不存在，则创建
     output_dir.mkdir(parents=True, exist_ok=True)

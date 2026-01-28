@@ -334,8 +334,12 @@ def extract_using_llm(todo_list: List[Path], conf: JobConfig) -> bool:
     # Since we rate limit nicely, we can have more threads, they will just block.
     # But let's keep it reasonable, e.g., 5 workers.
 
+    import functools
+
+    worker = functools.partial(process_file, conf=conf)
+
     with ThreadPoolExecutor(max_workers=5) as executor:
-        results = executor.map(process_file, pdf_files)
+        results = executor.map(worker, pdf_files)
 
         for res in results:
             if res:

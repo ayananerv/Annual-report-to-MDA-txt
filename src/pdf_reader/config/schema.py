@@ -46,6 +46,10 @@ class JobConfig:
     start_patterns: List[str]
     ending_patterns: List[str]
 
+    # OCR
+    use_ocr: bool
+    ocr_output: Path
+
     @classmethod
     def from_defaults(cls, overrides: Optional[Dict[str, Any]] = None) -> "JobConfig":
         overrides = overrides or {}
@@ -86,6 +90,9 @@ class JobConfig:
             # PATTERNS
             "start_patterns": cg.PATTERNS["start_patterns"],
             "ending_patterns": cg.PATTERNS["ending_patterns"],
+            # OCR
+            "use_ocr": cg.OCR["use_ocr"],
+            "ocr_output": cg.OCR["ocr_output"],
         }
 
         # 2. Override with provided values

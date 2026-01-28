@@ -72,3 +72,8 @@ PATTERNS = {
         r"^\s*(?:重要事项|公司治理|财务报告|企业管治报告|监事会报告)\s*$",
     ],
 }
+
+OCR = {
+    "use_ocr": True,
+    "ocr_output": PROJECT_ROOT,
+}

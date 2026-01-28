@@ -32,4 +32,4 @@ class ExtractUsingLlm(PipelineStage):
             print("所有文件均成功解析")
         else:
             print("进行下一阶段")
-        return PipelineContext(input_file, done)
+        return PipelineContext(input_file, False)

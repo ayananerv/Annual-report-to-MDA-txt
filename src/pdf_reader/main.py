@@ -87,25 +87,6 @@ def main():
             }
         ),
         OcrProcessPdf(),
-        StandardProcess(),
-        BatchCorruptRetry(
-            {
-                "batch_size": 1,
-                "timeout": 60,
-                "logfile": "batch_corrupt_retry.csv",
-            }
-        ),
-        LargerRangeTrial(
-            {
-                "search_page_range": (24, 60),
-                "logfile": "larger_range_trail.csv",
-            }
-        ),
-        ExtractUsingLlm(
-            {
-                "keys": [],
-            }
-        ),
     ]
 
     for p in pipeline:
