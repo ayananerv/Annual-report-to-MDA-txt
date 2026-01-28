@@ -1,0 +1,99 @@
+@startuml procedure
+
+start
+
+:setup_env;
+
+:logger listening;
+
+partition first round {
+  :todo_list <- fetch_from_dir;
+  :set batch_size=10;
+  :split to batch;
+  :set timeout=300;
+  :set page_range=(4,25);
+
+  fork
+    :timeout_batches +=
+    extract(batch);
+
+  fork again
+    partition do extract {
+      :locate section range;
+      if (not found?) then (no)
+        :store txt;
+        :log;
+        stop
+      endif
+      :do_extract(page_range);
+      :save_to_txt;
+    }
+
+  fork again
+    :same;
+  end fork
+
+  :set batch_size=1;
+  :set timeout=30;
+  fork
+    :extract(timeout_batches);
+
+  fork again
+    :extract(timeout_batches);
+
+  fork again
+    :same;
+  end fork
+
+}
+
+:get error_list;
+
+partition change page range {
+  :todo_list <- error_list['not find start'];
+  :set batch_size=5;
+  :split to batches
+  :set page_range=(24,60);
+  :set timeout=300;
+
+  fork
+    :timeout_batches +=
+    extract(batch);
+
+  fork again
+    :timeout_batches +=
+    extract(batch);
+
+  fork again
+    :same;
+  end fork
+
+  :set batch_size=1;
+  :set timeout=30;
+  fork
+    :extract(timeout_batches);
+
+  fork again
+    :extract(timeout_batches);
+
+  fork again
+    :same;
+  end fork
+}
+
+:get new_error_list;
+
+partition ai assistant {
+  :do_ai_assistant(new_error_list);
+}
+
+partition do OCR {
+  :todo_list <- error_list['unreadable'];
+  :do_ocr;
+}
+
+:release_resource;
+
+stop
+
+@enduml

@@ -13,6 +13,7 @@ temp/
 logs/
 assets/
 *.csv
+console.log
 
 # vscode
 .vscode/

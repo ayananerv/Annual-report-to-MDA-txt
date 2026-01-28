@@ -1,21 +1,14 @@
-from .. import config as cg
-from .dto import MDARange
-from ..util.extract_util import *
-
-import pdfplumber
-from pdfplumber.pdf import PDF
-from pdfplumber.page import Page
-
-
 def remove_duplicate_chars(text):
-    if not text: return ""
+    if not text:
+        return ""
     result = []
-    if len(text) > 0: result.append(text[0])
+    if len(text) > 0:
+        result.append(text[0])
     for i in range(1, len(text)):
         char = text[i]
-        if char != text[i-1]:
+        if char != text[i - 1]:
             result.append(char)
-        elif ('a' <= char <= 'z') or ('A' <= char <= 'Z') or ('0' <= char <= '9'):
+        elif ("a" <= char <= "z") or ("A" <= char <= "Z") or ("0" <= char <= "9"):
             result.append(char)
     return "".join(result)
 
@@ -24,7 +17,6 @@ def clean_special_chars(text):
     if not text:
         return ""
     return "".join(ch for ch in text if ch.isprintable() or ch in "\n\t")
-
 
 
 def extract_text_for_content(page, aggressive_crop=True):
@@ -73,18 +65,23 @@ def extract_text_for_content(page, aggressive_crop=True):
     return text
 
 
+from pdfplumber.pdf import PDF
+from pdfplumber.page import Page
+
+from .dto import MDARange
+from ..config import JobConfig, sys_logger
+from ..util.SysException import *
 
 
-
-
-def extract_content_by_range(pdf: PDF, rng: MDARange) -> str:
+def extract_content_by_range(pdf: PDF, rng: MDARange, conf: JobConfig) -> str:
     """
     根据给定的物理坐标，执行内容的提取和清洗。
     """
     extracted_segments = []
 
     for i in range(rng.start_page_idx, rng.end_page_idx + 1):
-        if i >= len(pdf.pages): break
+        if i >= len(pdf.pages):
+            break
 
         page = pdf.pages[i]
         # 基础提取
@@ -94,12 +91,11 @@ def extract_content_by_range(pdf: PDF, rng: MDARange) -> str:
 
         # 1. 处理首页 (Head Trimming)
         if i == rng.start_page_idx:
-            content = _trim_page_head(content, rng.start_line_text)
+            content = _trim_page_head(content, rng.start_line_text, conf)
 
         # 2. 处理尾页 (Tail Trimming)
         if i == rng.end_page_idx:
-            content = _trim_page_tail(content, rng.chapter_num, rng.pattern_type)
-
+            content = _trim_page_tail(content, rng.chapter_num, rng.pattern_type, conf)
         if content:
             extracted_segments.append(content)
 
@@ -108,11 +104,12 @@ def extract_content_by_range(pdf: PDF, rng: MDARange) -> str:
 
 import re
 
+
 # 将原来堆在主函数里的正则切分逻辑下沉到私有辅助函数
-def _trim_page_head(content: str, raw_marker: str) -> str:
+def _trim_page_head(content: str, raw_marker: str, conf: JobConfig) -> str:
     lines = content.split("\n")
     match_index = -1
-    regexes = [re.compile(p) for p in cg.PATTERNS["start_patterns"]]
+    regexes = [re.compile(p) for p in conf.start_patterns]
 
     for idx, line in enumerate(lines):
         for regex in regexes:
@@ -127,7 +124,12 @@ def _trim_page_head(content: str, raw_marker: str) -> str:
     return content
 
 
-def _trim_page_tail(content: str, chapter_num: int, p_type: str) -> str:
+from ..util.extract_util import *
+
+
+def _trim_page_tail(
+    content: str, chapter_num: int, p_type: str, conf: JobConfig
+) -> str:
     """
     逻辑：找到下一章的标题（或通用结束符），并删除从该行开始（含该行）的所有内容。
     """
@@ -155,7 +157,7 @@ def _trim_page_tail(content: str, chapter_num: int, p_type: str) -> str:
 
     # 2. 加入通用结束符 (FALLBACK)
     # 假设你的 config 里面有这个列表，类似于 ["审计报告", "财务报表附注"...]
-    combined_patterns.extend(cg.PATTERNS["ending_patterns"])
+    combined_patterns.extend(conf.ending_patterns)
 
     regexes = [re.compile(p) for p in combined_patterns]
 
@@ -182,7 +184,6 @@ def _trim_page_tail(content: str, chapter_num: int, p_type: str) -> str:
         content = "\n".join(lines[:match_index])
 
     return content
-
 
 
 def _extract_text_for_content2(page, aggressive_crop=True):

@@ -1,17 +1,16 @@
 from enum import Enum, unique
 
+
 class ErrorCode(Enum):
-    """ NAME = (CODE, MESSAGE) """
+    """NAME = (CODE, MESSAGE)"""
+
     SUCCESS = (0, "Success")
     UNREADABLE = (101, "Unreadable")
-    NO_CHINESE = (202, "Not find valid charactor, need OCR")
+    NO_CHINESE = (202, "Not find valid character, need OCR")
     NO_START = (303, "Not find start index")
-    NO_START_TWICE = (304, "Not find start index in larger range")
-    NO_ENDING = (305, "Not find ending index")
-    BATCH_CORRUPT = (404, "Batch corrupted, may or may not finish")
-    TIMEOUT = (505, "Timeout: Skip current file extraction")
-    UNKNOWN_ERROR = (1000, "Unknown error occured")
-
+    NO_ENDING = (304, "Not find ending index")
+    TIMEOUT = (404, "Extraction timeout")
+    UNKNOWN_ERROR = (1000, "Unknown error occurred")
 
     @property
     def code(self):
