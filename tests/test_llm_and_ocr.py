@@ -118,9 +118,7 @@ class ExtractUsingLlm(PipelineStage):
 def test_batch_corrupt_retry():
     default_conf = JobConfig.from_defaults()
     ctx = PipelineContext(
-        Path(
-            "/home/u2022310286/Ubuntu/Annual-report-to-MDA-txt/logs/larger_range_trail.csv"
-        ),
+        Path(""),
         False,
     )
 
