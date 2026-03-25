@@ -1,33 +1,15 @@
 [project]
-name = "pdf-reader"
+name = "pdf-mda-extractor"
 version = "0.1.0"
-description = "Add your description here"
+description = "Extract MDA section from Annual Reports"
 readme = "README.md"
-requires-python = ">=3.14"
-dependencies = []
-
-
-[build-system]
-requires = ["setuptools>=68"]
-build-backend = "setuptools.build_meta"
-
-
-[tool.setuptools]
-package-dir = {"" = "src"}
-
-
-[tool.setuptools.packages.find]
-where = ["src"]
-
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py", "*_test.py"]
-
-
-[dependency-groups]
-dev = [
-    "black>=26.1.0",
-    "pytest>=9.0.2",
-    "pytest-mock>=3.15.1",
+requires-python = ">=3.10"
+dependencies = [
+    "pdfplumber>=0.10.0",
+    "ocrmypdf>=15.0.0",
+    "tqdm>=4.66.0",
+    "requests>=2.31.0",
 ]
+
+[tool.uv]
+dev-dependencies = []
